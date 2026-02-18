@@ -5,8 +5,8 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'Rupee Tracker | Your Budget Manager',
-  description: 'Manage your transactions in Rupees with ease.',
+  title: 'Budget Buddy | Your Finance Manager',
+  description: 'Manage your transactions and budget with ease.',
 };
 
 export default function RootLayout({

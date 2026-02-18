@@ -15,10 +15,10 @@ export default function LandingPage() {
             <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
               <div className="flex flex-col gap-6">
                 <h1 className="font-headline text-4xl font-extrabold tracking-tight sm:text-6xl text-foreground">
-                  Master Your Money in <span className="text-primary">Rupees</span>
+                  Master Your Money with <span className="text-primary">Budget Buddy</span>
                 </h1>
                 <p className="text-lg text-muted-foreground max-w-[600px]">
-                  Take control of your financial life with Rupee Tracker. Input transactions, track spending patterns, and save more with our intuitive and secure dashboard.
+                  Take control of your financial life with Budget Buddy. Input transactions, track spending patterns, and save more with our intuitive and secure dashboard.
                 </p>
                 <div className="flex flex-wrap gap-4 mt-4">
                   <Button size="lg" className="h-12 px-8 font-semibold" asChild>
@@ -46,7 +46,7 @@ export default function LandingPage() {
         <section className="bg-muted/30 py-24">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
-              <h2 className="font-headline text-3xl font-bold sm:text-4xl">Why Choose Rupee Tracker?</h2>
+              <h2 className="font-headline text-3xl font-bold sm:text-4xl">Why Choose Budget Buddy?</h2>
               <p className="mt-4 text-muted-foreground">Everything you need to manage your personal finances effectively.</p>
             </div>
             <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
@@ -81,7 +81,7 @@ export default function LandingPage() {
       </main>
       <footer className="border-t py-12 bg-background">
         <div className="container mx-auto px-4 text-center text-muted-foreground">
-          <p>© 2024 Rupee Tracker. All rights reserved.</p>
+          <p>© 2024 Budget Buddy. All rights reserved.</p>
         </div>
       </footer>
     </div>

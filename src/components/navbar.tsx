@@ -32,7 +32,7 @@ export function Navbar() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2 font-headline text-xl font-bold text-primary">
           <Wallet className="h-6 w-6" />
-          <span>Rupee Tracker</span>
+          <span>Budget Buddy</span>
         </Link>
 
         <div className="flex items-center gap-4">
