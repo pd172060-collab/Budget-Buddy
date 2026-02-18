@@ -1,26 +1,18 @@
-
 'use client';
 
 import Link from 'next/link';
 import { useTheme } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
-import { Moon, Sun, Wallet, LogOut, User } from 'lucide-react';
-import { auth } from '@/lib/firebase';
-import { signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { useEffect, useState } from 'react';
+import { Moon, Sun, Wallet, LogOut } from 'lucide-react';
+import { useAuth, useUser } from '@/firebase';
+import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
 export function Navbar() {
   const { theme, toggleTheme } = useTheme();
-  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const { user } = useUser();
+  const auth = useAuth();
   const router = useRouter();
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-    });
-    return () => unsubscribe();
-  }, []);
 
   const handleSignOut = async () => {
     await signOut(auth);

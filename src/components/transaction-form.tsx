@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState } from 'react';
-import { db, auth } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
+import { collection, serverTimestamp, doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,6 +17,8 @@ export function TransactionForm() {
   const [type, setType] = useState('expense');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const db = useFirestore();
+  const { user } = useUser();
 
   const categories = [
     { label: 'Food', value: 'food' },
@@ -31,17 +32,20 @@ export function TransactionForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth.currentUser) return;
+    if (!user || !db) return;
     
     setLoading(true);
     try {
-      await addDoc(collection(db, 'transactions'), {
-        userId: auth.currentUser.uid,
+      const transactionsRef = collection(db, 'users', user.uid, 'transactions');
+      addDocumentNonBlocking(transactionsRef, {
+        userId: user.uid,
         amount: parseFloat(amount),
         description,
-        category,
+        categoryId: category,
         type,
-        date: serverTimestamp(),
+        transactionDate: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
       toast({ title: 'Success', description: 'Transaction added!' });
       setAmount('');
