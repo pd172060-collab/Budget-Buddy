@@ -1,0 +1,11 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "landing-hero",
+      "description": "Financial management illustration",
+      "imageUrl": "https://picsum.photos/seed/finance/1200/600",
+      "imageHint": "finance management"
+    }
+  ]
+}
