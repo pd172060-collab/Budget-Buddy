@@ -1,0 +1,235 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user account within the Rupee Tracker application. This entity stores user preferences and links to other user-specific data, but does not store authentication credentials.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address, used for identification and communication.",
+          "format": "email"
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The first name of the user."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The last name of the user."
+        },
+        "preferredTheme": {
+          "type": "string",
+          "description": "The user's preference for the application's visual theme (e.g., 'dark' or 'light')."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the user account was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the user account was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "preferredTheme",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Category": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Category",
+      "type": "object",
+      "description": "Represents a classification for transactions, such as 'Food', 'Salary', or 'Rent'. Categories can be global or user-defined.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Category entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the category (e.g., 'Groceries', 'Utilities')."
+        },
+        "type": {
+          "type": "string",
+          "description": "Indicates whether the category is typically used for 'expense' or 'income' transactions."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User who created this category. If null, it's a global category. (Relationship: User 0..1:N Category)"
+        },
+        "iconName": {
+          "type": "string",
+          "description": "A symbolic name for an icon representing this category in the UI."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the category was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the category was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "type",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Transaction": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Transaction",
+      "type": "object",
+      "description": "Represents a single financial transaction recorded by a user, including details like amount, date, and category.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Transaction entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User who owns this transaction. (Relationship: User 1:N Transaction)"
+        },
+        "amount": {
+          "type": "number",
+          "description": "The amount of the transaction in Rupees."
+        },
+        "transactionDate": {
+          "type": "string",
+          "description": "The date and time when the transaction occurred.",
+          "format": "date-time"
+        },
+        "description": {
+          "type": "string",
+          "description": "An optional descriptive note for the transaction."
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of transaction, e.g., 'expense' or 'income'."
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "Reference to the Category associated with this transaction. (Relationship: Category 1:N Transaction)"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the transaction record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the transaction record was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "amount",
+        "transactionDate",
+        "type",
+        "categoryId",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores individual user profiles. Access is restricted to the owner of the profile, identified by `request.auth.uid` matching the `{userId}` wildcard in the path.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the User, matching `request.auth.uid`."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/categories/{categoryId}",
+        "definition": {
+          "entityName": "Category",
+          "schema": {
+            "$ref": "#/backend/entities/Category"
+          },
+          "description": "Stores categories created and owned by a specific user. Includes denormalized 'userId' field matching the path parameter for authorization independence. Access is restricted to the owning user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the User who owns this category."
+            },
+            {
+              "name": "categoryId",
+              "description": "The unique identifier for this user-specific category."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/global_categories/{categoryId}",
+        "definition": {
+          "entityName": "Category",
+          "schema": {
+            "$ref": "#/backend/entities/Category"
+          },
+          "description": "Stores globally available categories that can be used by all users. These categories do not have a specific 'userId' owner. All authenticated users can read; write access is typically restricted to administrators.",
+          "params": [
+            {
+              "name": "categoryId",
+              "description": "The unique identifier for this global category."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/transactions/{transactionId}",
+        "definition": {
+          "entityName": "Transaction",
+          "schema": {
+            "$ref": "#/backend/entities/Transaction"
+          },
+          "description": "Stores financial transactions belonging to a specific user. Includes denormalized 'userId' field matching the path parameter for authorization independence. Access is restricted to the owning user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the User who owns this transaction."
+            },
+            {
+              "name": "transactionId",
+              "description": "The unique identifier for this transaction."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The recommended Firestore structure for Rupee Tracker prioritizes Authorization Independence and Structural Segregation to ensure robust, scalable, and debuggable security rules. \n\n1.  **User Data Isolation:** All user-specific data, including user profiles, personal categories, and transactions, are organized under a top-level `/users/{userId}` collection. This path-based ownership (`/users/{userId}/profile`, `/users/{userId}/categories`, `/users/{userId}/transactions`) immediately ties the data to the authenticated user (`request.auth.uid`), eliminating the need for complex `get()` calls in security rules to ascertain ownership. Every document within a user's subcollections (e.g., a `Category` or `Transaction` document) will contain an explicit `userId` field that matches the `{userId}` wildcard in its path. This denormalization ensures that authorization is self-contained within each document and its path, adhering to the Authorization Independence principle.\n\n2.  **Structural Segregation for Categories:** Categories are segregated based on their security posture. `User-specific categories` are stored under `/users/{userId}/categories/{categoryId}`, meaning only the owning user can access them. `Global categories` (those not owned by a specific user) are stored in a separate top-level collection: `/global_categories/{categoryId}`. This separation is a direct application of Structural Segregation, where documents with different access requirements are placed in distinct collections. This makes security rules simple: rules for `/users/{userId}/categories` will enforce `request.auth.uid == userId`, while rules for `/global_categories` will allow read access to all authenticated users (and restricted write access, e.g., to an admin role).\n\n3.  **QAPs (Rules are not Filters) Support:**\n    *   For **user-specific data** (`/users/{userId}/...`): Any `list` operation on subcollections like `/users/{userId}/categories` or `/users/{userId}/transactions` will automatically be restricted to documents where the path's `{userId}` matches `request.auth.uid`. This means the Firestore rules can enforce ownership at the collection level, preventing unauthorized users from even requesting a `list` of another user's data. The client-side queries do not need to add `.where('userId', '==', request.auth.uid)` because the rules guarantee this from the path itself.\n    *   For **global data** (`/global_categories`): `list` operations will return all documents in that collection, as intended for public/global read access. There's no implicit filtering by `userId` in the rules, only explicit access control for all users.\n\nThis design leverages explicit path-based ownership and structural segregation to create a clear, self-documenting, and secure data model where authorization is explicit and atomic, leading to highly debuggable security rules and efficient queries."
+  }
+}

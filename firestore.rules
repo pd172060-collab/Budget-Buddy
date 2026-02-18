@@ -1,0 +1,121 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * RUPEE TRACKER SECURITY RULES - PROTOTYPING MODE
+     *
+     * CORE PHILOSOPHY:
+     * This ruleset enforces a strict user-ownership model. Access to data is primarily determined
+     * by the document's path and the identity of the authenticated user.
+     *
+     * DATA STRUCTURE:
+     * - User-specific data (profiles, categories, transactions) is nested under /users/{userId}.
+     * - Global data (standard categories) is stored in top-level /global_categories.
+     *
+     * KEY SECURITY DECISIONS:
+     * - Ownership Independence: Security relies on the {userId} wildcard in the path matching
+     *   the user's auth UID, supplemented by internal userId fields for data integrity.
+     * - Structural Segregation: Private user categories and global categories are stored in
+     *   entirely different collections to simplify rules and prevent accidental exposure.
+     * - Relational Integrity: On document creation, the rules enforce that any internal
+     *   'userId' or 'id' fields match the authenticated user and the path.
+     * - Write Protection: Only the document owner can create, update, or delete their own data.
+     *   Update and delete operations explicitly verify that a document exists.
+     *
+     * PROTOTYPING NOTE:
+     * These rules do NOT enforce strict schema validation (e.g., checking if 'amount' is a number).
+     * They focus exclusively on robust authorization and relational consistency to allow for
+     * rapid schema iteration while maintaining high security.
+     */
+
+    // --- Global Helper Functions ---
+
+    /**
+     * @description Checks if a user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the authenticated user's UID matches a provided userId.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * @description Checks if the user is the owner and the document exists.
+     * Used for update and delete operations to ensure state-changing requests are valid.
+     */
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Rules for the User profile documents. Allows users to manage their own profile.
+     * @path /users/{userId}
+     * @allow (create) request.auth.uid == 'user_123' && request.resource.data.id == 'user_123'
+     * @deny (get) request.auth.uid == 'user_456' attempting to read /users/user_123
+     * @principle Ownership-based access and self-creation for user root documents.
+     */
+    match /users/{userId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+
+      /**
+       * @description Rules for user-specific categories. Restricted to the owner.
+       * @path /users/{userId}/categories/{categoryId}
+       * @allow (list) user_123 listing their own categories.
+       * @deny (update) user_123 trying to change the userId field in their category.
+       * @principle Denormalized ownership field must match path for relational integrity.
+       */
+      match /categories/{categoryId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+      }
+
+      /**
+       * @description Rules for user-specific transactions. Restricted to the owner.
+       * @path /users/{userId}/transactions/{transactionId}
+       * @allow (create) user_123 creating a transaction where userId matches their UID.
+       * @deny (delete) user_456 attempting to delete user_123's transaction.
+       * @principle Path-based isolation ensuring users only access their own financial records.
+       */
+      match /transactions/{transactionId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+      }
+    }
+
+    /**
+     * @description Rules for global categories available to all authenticated users.
+     * @path /global_categories/{categoryId}
+     * @allow (get) Any signed-in user reading a global category.
+     * @deny (create) Any user attempting to create a global category (Admin only).
+     * @principle Public read for authenticated users with restricted administrative writes.
+     */
+    match /global_categories/{categoryId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if false; // Admin write access is not defined in IR; restricted for security.
+    }
+  }
+}
+
+/**
+ * DEVELOPER NOTES:
+ * 1. The 'User' request mentioned an 'api key not valid at create account'.
+ *    Firestore rules cannot directly validate API keys; this should be handled
+ *    via Firebase Auth or Cloud Functions. These rules focus on document access.
+ * 2. If 'Global Categories' need to be manageable by a specific user,
+ *    consider adding a 'role' check or an 'isAdmin' custom claim.
+ */
