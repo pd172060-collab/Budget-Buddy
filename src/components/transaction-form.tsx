@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
-import { collection, serverTimestamp, doc } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,8 +22,11 @@ export function TransactionForm() {
 
   const categories = [
     { label: 'Food', value: 'food' },
-    { label: 'Rent', value: 'rent' },
     { label: 'Salary', value: 'salary' },
+    { label: 'Maintenance', value: 'maintenance' },
+    { label: 'Miscellaneous', value: 'miscellaneous' },
+    { label: 'Electrical', value: 'electrical' },
+    { label: 'Rent', value: 'rent' },
     { label: 'Utilities', value: 'utilities' },
     { label: 'Shopping', value: 'shopping' },
     { label: 'Entertainment', value: 'entertainment' },
