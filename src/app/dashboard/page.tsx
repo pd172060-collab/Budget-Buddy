@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { collection, query, where, orderBy, limit } from 'firebase/firestore';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
@@ -11,7 +11,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import { Loader2 } from 'lucide-react';
+import { Loader2, IndianRupee } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
@@ -29,6 +29,7 @@ export default function DashboardPage() {
 
   const { data: transactions, isLoading: isTransactionsLoading } = useCollection(transactionsQuery);
 
+  // Calculate totals for the summary cards
   const totals = useMemo(() => {
     if (!transactions) return { income: 0, expense: 0 };
     return transactions.reduce((acc, t) => {
@@ -36,6 +37,26 @@ export default function DashboardPage() {
       else acc.expense += t.amount;
       return acc;
     }, { income: 0, expense: 0 });
+  }, [transactions]);
+
+  // Calculate running balance for each transaction in the current list
+  const transactionsWithBalance = useMemo(() => {
+    if (!transactions) return [];
+    
+    // To calculate running balance, we process from oldest to newest
+    const sortedOldestFirst = [...transactions].sort((a, b) => 
+      new Date(a.transactionDate).getTime() - new Date(b.transactionDate).getTime()
+    );
+    
+    let runningTotal = 0;
+    const processed = sortedOldestFirst.map((t) => {
+      if (t.type === 'income') runningTotal += t.amount;
+      else runningTotal -= t.amount;
+      return { ...t, runningBalance: runningTotal };
+    });
+    
+    // Return to newest first for display
+    return processed.reverse();
   }, [transactions]);
 
   if (isUserLoading) {
@@ -88,30 +109,36 @@ export default function DashboardPage() {
                           <TableHead>Description</TableHead>
                           <TableHead>Category</TableHead>
                           <TableHead className="text-right">Amount</TableHead>
+                          <TableHead className="text-right">Balance</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {!transactions || transactions.length === 0 ? (
+                        {!transactionsWithBalance || transactionsWithBalance.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                            <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                               No transactions found. Add one to get started!
                             </TableCell>
                           </TableRow>
                         ) : (
-                          transactions.map((t) => (
+                          transactionsWithBalance.map((t) => (
                             <TableRow key={t.id}>
-                              <TableCell className="text-sm">
-                                {t.transactionDate ? format(new Date(t.transactionDate), 'MMM dd, yyyy') : 'Pending'}
+                              <TableCell className="text-xs">
+                                {t.transactionDate ? format(new Date(t.transactionDate), 'MMM dd') : 'Pending'}
                               </TableCell>
-                              <TableCell className="font-medium">{t.description}</TableCell>
+                              <TableCell className="font-medium max-w-[120px] truncate">{t.description}</TableCell>
                               <TableCell>
-                                <Badge variant="outline" className="capitalize">
+                                <Badge variant="outline" className="capitalize text-[10px] px-1.5 py-0">
                                   {t.categoryId}
                                 </Badge>
                               </TableCell>
                               <TableCell className={`text-right font-bold ${t.type === 'income' ? 'text-green-500' : 'text-red-500'}`}>
                                 <span className="flex items-center justify-end">
                                   {t.type === 'income' ? '+' : '-'}₹{t.amount.toLocaleString('en-IN')}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-right font-medium text-muted-foreground">
+                                <span className="flex items-center justify-end text-xs">
+                                  ₹{t.runningBalance.toLocaleString('en-IN')}
                                 </span>
                               </TableCell>
                             </TableRow>

@@ -37,12 +37,18 @@ export function TransactionForm() {
     e.preventDefault();
     if (!user || !db) return;
     
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      toast({ variant: 'destructive', title: 'Invalid Amount', description: 'Please enter a valid amount.' });
+      return;
+    }
+
     setLoading(true);
     try {
       const transactionsRef = collection(db, 'users', user.uid, 'transactions');
       addDocumentNonBlocking(transactionsRef, {
         userId: user.uid,
-        amount: parseFloat(amount),
+        amount: numAmount,
         description,
         categoryId: category,
         type,
