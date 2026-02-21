@@ -1,11 +1,16 @@
-
 {
   "placeholderImages": [
     {
       "id": "landing-hero",
-      "description": "Financial management illustration",
-      "imageUrl": "https://picsum.photos/seed/finance/1200/600",
-      "imageHint": "finance management"
+      "description": "Financial management illustration showing growth and stability",
+      "imageUrl": "https://picsum.photos/seed/finance-growth/1200/600",
+      "imageHint": "finance growth"
+    },
+    {
+      "id": "dashboard-preview",
+      "description": "App dashboard showing financial charts and transactions",
+      "imageUrl": "https://picsum.photos/seed/bb-preview/1200/675",
+      "imageHint": "finance dashboard"
     }
   ]
 }
