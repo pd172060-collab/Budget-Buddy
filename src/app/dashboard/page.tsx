@@ -10,8 +10,9 @@ import { TransactionForm } from '@/components/transaction-form';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
-import { Loader2, IndianRupee } from 'lucide-react';
+import { Loader2, Download } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
@@ -23,7 +24,7 @@ export default function DashboardPage() {
     return query(
       collection(db, 'users', user.uid, 'transactions'),
       orderBy('transactionDate', 'desc'),
-      limit(20)
+      limit(50)
     );
   }, [db, user]);
 
@@ -59,6 +60,33 @@ export default function DashboardPage() {
     return processed.reverse();
   }, [transactions]);
 
+  const handleDownloadCSV = () => {
+    if (!transactions || transactions.length === 0) return;
+
+    const headers = ['Date', 'Description', 'Category', 'Type', 'Amount', 'Running Balance'];
+    const csvContent = [
+      headers.join(','),
+      ...transactionsWithBalance.map((t) => [
+        t.transactionDate ? format(new Date(t.transactionDate), 'yyyy-MM-dd HH:mm:ss') : '',
+        `"${t.description.replace(/"/g, '""')}"`,
+        t.categoryId,
+        t.type,
+        t.amount,
+        t.runningBalance,
+      ].join(',')),
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `budget_buddy_transactions_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (isUserLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
@@ -79,7 +107,7 @@ export default function DashboardPage() {
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="flex flex-col gap-8">
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold font-headline">Financial Dashboard</h1>
+            <h1 className="text-3xl font-bold font-headline text-primary">Financial Dashboard</h1>
             <p className="text-muted-foreground">Welcome back! Here&apos;s your financial overview.</p>
           </div>
 
@@ -93,8 +121,18 @@ export default function DashboardPage() {
 
             <div className="lg:col-span-3">
               <Card className="h-full">
-                <CardHeader className="flex flex-row items-center justify-between">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                   <CardTitle>Recent Transactions</CardTitle>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleDownloadCSV}
+                    disabled={!transactions || transactions.length === 0}
+                    className="flex items-center gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download CSV
+                  </Button>
                 </CardHeader>
                 <CardContent>
                   {isTransactionsLoading ? (
